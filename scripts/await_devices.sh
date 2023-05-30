@@ -1,33 +1,27 @@
 #!/bin/bash
 
-sleep_time=5
+get_devices_count() {
+  adb devices | grep -v devices | grep device | cut -f 1 | wc -l
+}
+
+sleep_time=10
 max_retries=60
 retries_count=0
 expected_devices_count=$1
 devices_count=$(get_devices_count)
 
-get_devices_count() {
-  adb devices | grep -v devices | grep device | cut -f 1 | wc -l
-}
-
-restart_adb() {
-  echo "Restart ADB server"
-  adb kill-server
-}
-
 check_expected_devices() {
-  echo "ADB devices"
-  adb devices
   devices_count=$(get_devices_count)
   echo "Found $devices_count devices - expected $expected_devices_count"
-  retries_count=$(($retries_count+1))
+  retries_count=$(($retries_count + 1))
   echo "Current retry is $retries_count sleeping for $sleep_time seconds"
+  adb kill-server
   sleep $sleep_time
 }
 
 while [[ $devices_count -ne $expected_devices_count && $retries_count -lt $max_retries ]]; do
-  check_expected_devices()
-  restart_adb()
+  adb devices
+  check_expected_devices
 done
 
 if [[ $retries_count -eq $max_retries ]]; then
